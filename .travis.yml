@@ -1,5 +1,9 @@
 language: php
 
+cache:
+  directories:
+    - $HOME/.composer/cache
+
 php:
   - 5.3
   - 5.4
@@ -8,16 +12,43 @@ php:
   - 7.0
   - hhvm
 
-before_install:
-  - travis_retry composer self-update
-install:
-  - travis_retry composer install --no-interaction --prefer-source
+env:
+  global:
+    - setup=basic
 
-script:
-  - vendor/bin/phpunit --verbose --coverage-text
+sudo: false
+
+install:
+  - if [[ $setup = 'basic' ]]; then travis_retry composer install --no-interaction --prefer-dist; fi
+  - if [[ $setup = 'stable' ]]; then travis_retry composer update --prefer-dist --no-interaction --prefer-stable; fi
+  - if [[ $setup = 'lowest' ]]; then travis_retry composer update --prefer-dist --no-interaction --prefer-lowest --prefer-stable; fi
+
+script: vendor/bin/phpunit --verbose --coverage-text --coverage-clover=coverage.xml
+
+after_success: bash <(curl -s https://codecov.io/bash)
 
 matrix:
+  include:
+    - php: 5.3
+      env: setup=lowest
+    - php: 5.3
+      env: setup=stable
+    - php: 5.4
+      env: setup=lowest
+    - php: 5.4
+      env: setup=stable
+    - php: 5.5
+      env: setup=lowest
+    - php: 5.5
+      env: setup=stable
+    - php: 5.6
+      env: setup=lowest
+    - php: 5.6
+      env: setup=stable
+    - php: 7.0
+      env: setup=lowest
+    - php: 7.0
+      env: setup=stable
   allow_failures:
     - php: hhvm
-    - php: 7.0
   fast_finish: true
